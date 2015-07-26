@@ -19,6 +19,7 @@ class RenderContext
 	D3DPRESENT_PARAMETERS	mPresentParameters;	// needed when device is reset
 	int mDisplayWidth;
 	int mDisplayHeight;
+	bool mShadersChanged;
 
 	Math::Matrix mViewMatrix;
 	Math::Matrix mProjectionMatrix;
@@ -35,5 +36,7 @@ public:
 	void SetViewMatrix( Math::Matrix& newViewMatrix ) { mViewMatrix = newViewMatrix; }
 	Math::Matrix GetViewMatrix() { return mViewMatrix; }
 	Math::Matrix GetProjectionMatrix() { return mProjectionMatrix; }
+	void SetShadersChanged()  { mShadersChanged = true; }
+	bool HaveShadersChanged() { return mShadersChanged; }
 };
 

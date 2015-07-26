@@ -46,6 +46,7 @@ RenderContext::RenderContext( HWND hWnd, int width, int height )
 
 	mViewMatrix = Math::Matrix::LookAt( Math::Vector(0,0,-70), Math::Vector( 0, 0, 0 ), Math::Vector(0,1,0) );
 	mProjectionMatrix = Math::Matrix::Perspective( 45.0f, ((float)width)/height, 1.0f, 1000.0f );
+	mShadersChanged = false;
 }
 
 RenderContext::~RenderContext(void)
@@ -107,4 +108,6 @@ void RenderContext::RenderFrame( DisplayList::Node* displayList )
 		mDevice->EndScene();
 		mDevice->Present( NULL, NULL, NULL, NULL );
 	}
+
+	mShadersChanged = false;
  }

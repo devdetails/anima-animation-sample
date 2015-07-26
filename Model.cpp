@@ -74,34 +74,38 @@ void SkeletalModel::AcquireResources( RenderContext* context )
 {
 	for( unsigned int m=0; m<mMeshes.size(); ++m )
 	{
-		
 		Mesh& mesh = mMeshes[m];
-		context->Device()->CreateVertexDeclaration( &mesh.Data.mVertexElements[0], &mesh.mVertexDeclaration );
 
-		// now create vertex buffer
+		if( mesh.mVertexBuffer == NULL )
 		{
-			DX_CHECK( context->Device()->CreateVertexBuffer( mesh.Data.mVertexData.size(), D3DUSAGE_WRITEONLY, 0, D3DPOOL_DEFAULT, &mesh.mVertexBuffer, NULL ) );
+			context->Device()->CreateVertexDeclaration( &mesh.Data.mVertexElements[0], &mesh.mVertexDeclaration );
 
-			BYTE* vertexData;
-			DX_CHECK( mesh.mVertexBuffer->Lock( 0, 0, reinterpret_cast<void**>( &vertexData ), 0 ) );
-				memcpy( vertexData, &mesh.Data.mVertexData[0], mesh.Data.mVertexData.size() );
-			DX_CHECK( mesh.mVertexBuffer->Unlock() );
-		}
+			// now create vertex buffer
+			{
+				DX_CHECK( context->Device()->CreateVertexBuffer( mesh.Data.mVertexData.size(), D3DUSAGE_WRITEONLY, 0, D3DPOOL_DEFAULT, &mesh.mVertexBuffer, NULL ) );
+
+				BYTE* vertexData;
+				DX_CHECK( mesh.mVertexBuffer->Lock( 0, 0, reinterpret_cast<void**>( &vertexData ), 0 ) );
+					memcpy( vertexData, &mesh.Data.mVertexData[0], mesh.Data.mVertexData.size() );
+				DX_CHECK( mesh.mVertexBuffer->Unlock() );
+			}
 
 
-		// build index buffer
-		{
+			// build index buffer
+			{
 
-			DX_CHECK( context->Device()->CreateIndexBuffer( mesh.Data.mIndexData.size(), D3DUSAGE_WRITEONLY, mesh.Data.mIndexFormat, D3DPOOL_DEFAULT, &mesh.mIndexBuffer, NULL ) );
+				DX_CHECK( context->Device()->CreateIndexBuffer( mesh.Data.mIndexData.size(), D3DUSAGE_WRITEONLY, mesh.Data.mIndexFormat, D3DPOOL_DEFAULT, &mesh.mIndexBuffer, NULL ) );
 
-			BYTE* indexData;
-			DX_CHECK( mesh.mIndexBuffer->Lock( 0, 0, reinterpret_cast<void**>( &indexData ), 0 ) );
-				memcpy( indexData, &mesh.Data.mIndexData[0], mesh.Data.mIndexData.size() );
-			DX_CHECK( mesh.mIndexBuffer->Unlock() );
+				BYTE* indexData;
+				DX_CHECK( mesh.mIndexBuffer->Lock( 0, 0, reinterpret_cast<void**>( &indexData ), 0 ) );
+					memcpy( indexData, &mesh.Data.mIndexData[0], mesh.Data.mIndexData.size() );
+				DX_CHECK( mesh.mIndexBuffer->Unlock() );
 
+			}
 		}
 
 		// load textures
+		if( mesh.mDiffuseMap == NULL )
 		{
 			DWORD albedoMapFilter = D3DX_FILTER_TRIANGLE | D3DX_FILTER_DITHER | D3DX_FILTER_SRGB_IN | D3DX_FILTER_SRGB_OUT;
 			DWORD normalMapFilter = D3DX_FILTER_LINEAR;
@@ -117,6 +121,12 @@ void SkeletalModel::AcquireResources( RenderContext* context )
 
 		// load shaders
 		{
+			if(mesh.mEffect != NULL)
+			{
+				mesh.mEffect->Release();
+				mesh.mEffect = NULL;
+			}
+
 			unsigned int maxFloats = 0;
 			for( unsigned int m=0; m<SAM_COUNT; ++m )
 				maxFloats = max( maxFloats, mPoseBuffers[m]->Size() / sizeof(float) );
@@ -145,7 +155,6 @@ void SkeletalModel::AcquireResources( RenderContext* context )
 #ifdef DEBUG
 				// TODO: replace DXTRACE_ERR with vs console print so double clicking on file/line of error opens correct file
 				DXTRACE_ERR(errorText, hr );
-				__debugbreak();
 #else
 				MessageBox( NULL, errorText, errorTitle, MB_OK );
 				
@@ -338,6 +347,9 @@ int SkeletalModel::ToggleAnimationMethod()
 
 void SkeletalModel::Render( RenderContext* context )
 {
+	if( context->HaveShadersChanged() )
+		AcquireResources( context );
+
 	context->Device()->SetRenderState( D3DRS_ALPHABLENDENABLE, FALSE );
 	context->Device()->SetRenderState( D3DRS_ZWRITEENABLE, D3DZB_TRUE);
 	context->Device()->SetRenderState( D3DRS_ZENABLE, D3DZB_TRUE);

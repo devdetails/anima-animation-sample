@@ -30,6 +30,7 @@ class AnimaApplication
 
 	WNDCLASSEX mWindowClass;
 	HWND mWindowHandle;
+	HANDLE mShadersWatcher;
 
 	AnimaApplication(){}
 	AnimaApplication( WNDCLASSEX windowClass, HWND windowHandle ) : mWindowClass( windowClass ), mWindowHandle( windowHandle ){}

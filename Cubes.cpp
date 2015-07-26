@@ -14,6 +14,7 @@
 #include "TestEnvironment.h"
 #include "Model.h"
 #include "Input.h"
+#include "DxErr.h"
 
 
 #ifndef HID_USAGE_PAGE_GENERIC
@@ -149,6 +150,13 @@ HRESULT AnimaApplication::CreateInstance( HINSTANCE hInstance, HINSTANCE hPrevIn
 
 	AnimaApplication::mInstance = new AnimaApplication( winClass, hWnd );
 
+	char szCurrentDir[2048];
+	GetCurrentDirectory( sizeof(szCurrentDir), szCurrentDir );
+	strcat_s(szCurrentDir, "/../Shaders");
+	Instance()->mShadersWatcher = FindFirstChangeNotification( szCurrentDir, FALSE, FILE_NOTIFY_CHANGE_LAST_WRITE);
+	if (Instance()->mShadersWatcher  == INVALID_HANDLE_VALUE) 
+		DXTRACE_ERR("Unable to monitor shaders directory. Live shaders editing will not work", E_FAIL );
+
 	Instance()->mTestEnvironment = testEnvironment;
 	Instance()->mRenderContext = new RenderContext( hWnd, DISPLAY_WIDTH, DISPLAY_HEIGHT );
 	Instance()->mFramerateCounter = new FramerateCounter;
@@ -215,6 +223,11 @@ void AnimaApplication::NextFrame()
 	mModel->Update( mDeltaTime.Elapsed() );
 
 	mRenderContext->SetViewMatrix( mCamera->ViewMatrix() );
+	if( WaitForSingleObject(mShadersWatcher, 0) == WAIT_OBJECT_0 )
+	{
+		mRenderContext->SetShadersChanged();
+		FindNextChangeNotification(mShadersWatcher);
+	}
 	mRenderContext->RenderFrame( mModel );
 
 	mFramerateCounter->FrameEnd();
